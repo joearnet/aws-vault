@@ -20,12 +20,13 @@ type AssumeRoleProvider struct {
 	Duration          time.Duration
 	Tags              map[string]string
 	TransitiveTagKeys []string
+	SourceIdentity    string
 	Mfa
 }
 
 // Retrieve generates a new set of temporary credentials using STS AssumeRole
 func (p *AssumeRoleProvider) Retrieve(ctx context.Context) (aws.Credentials, error) {
-	role, err := p.assumeRole()
+	role, err := p.RetrieveStsCredentials(ctx)
 	if err != nil {
 		return aws.Credentials{}, err
 	}
@@ -48,7 +49,7 @@ func (p *AssumeRoleProvider) roleSessionName() string {
 	return p.RoleSessionName
 }
 
-func (p *AssumeRoleProvider) assumeRole() (*ststypes.Credentials, error) {
+func (p *AssumeRoleProvider) RetrieveStsCredentials(ctx context.Context) (*ststypes.Credentials, error) {
 	var err error
 
 	input := &sts.AssumeRoleInput{
@@ -84,7 +85,11 @@ func (p *AssumeRoleProvider) assumeRole() (*ststypes.Credentials, error) {
 		input.TransitiveTagKeys = p.TransitiveTagKeys
 	}
 
-	resp, err := p.StsClient.AssumeRole(context.TODO(), input)
+	if p.SourceIdentity != "" {
+		input.SourceIdentity = aws.String(p.SourceIdentity)
+	}
+
+	resp, err := p.StsClient.AssumeRole(ctx, input)
 	if err != nil {
 		return nil, err
 	}

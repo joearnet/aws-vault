@@ -1,3 +1,4 @@
+//go:build !darwin && !freebsd && !openbsd && !linux
 // +build !darwin,!freebsd,!openbsd,!linux
 
 package server
@@ -6,9 +7,8 @@ import (
 	"errors"
 	"log"
 	"os"
+	"os/exec"
 	"time"
-
-	exec "golang.org/x/sys/execabs"
 )
 
 // StartEc2EndpointProxyServerProcess starts a `aws-vault proxy` process
@@ -22,7 +22,7 @@ func StartEc2EndpointProxyServerProcess() error {
 		return err
 	}
 	time.Sleep(time.Second * 1)
-	if !isProxyRunning() {
+	if !IsProxyRunning() {
 		return errors.New("The EC2 Instance Metadata endpoint proxy server isn't running. Run `aws-vault proxy` as Administrator or root in the background and then try this command again")
 	}
 	return nil
